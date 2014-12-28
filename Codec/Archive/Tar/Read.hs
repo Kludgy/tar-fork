@@ -11,15 +11,18 @@
 -- Portability :  portable
 --
 -----------------------------------------------------------------------------
+
 module Codec.Archive.Tar.Read (read, FormatError(..)) where
 
 import Codec.Archive.Tar.Types
 
-import Data.Char     (ord)
-import Data.Int      (Int64)
-import Numeric       (readOct)
-import Control.Exception (Exception)
-import Data.Typeable (Typeable)
+import Data.Char           (ord)
+import Data.Int            (Int64)
+import Numeric             (readOct)
+import Control.Exception   (Exception)
+import Control.Applicative (Applicative(..))
+import Control.Monad       (liftM, ap)
+import Data.Typeable       (Typeable)
 
 import qualified Data.ByteString.Lazy as BS
 import qualified Data.ByteString.Lazy.Char8 as BS.Char8
@@ -195,6 +198,13 @@ getString :: Int64 -> Int64 -> ByteString -> String
 getString off len = BS.Char8.unpack . BS.Char8.takeWhile (/='\0') . getBytes off len
 
 data Partial e a = Error e | Ok a
+
+instance Functor (Partial e) where
+    fmap = liftM
+ 
+instance Applicative (Partial e) where
+    pure  = return
+    (<*>) = ap
 
 partial :: Partial e a -> Either e a
 partial (Error msg) = Left msg
